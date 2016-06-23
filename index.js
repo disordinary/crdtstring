@@ -42,9 +42,9 @@ class CRDTString {
 
 	fireEvents( event ) {
 		this.events.forEach( ( item ) => {
-		//	process.nextTick( ( ) => {
+			process.nextTick( ( ) => {
 				item( event );
-		//	 });
+			 });
 		} );
 	}
 

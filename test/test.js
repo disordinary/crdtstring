@@ -94,10 +94,14 @@ describe( 'events' , ( ) => {
 	it( 'should recieve events' , ( done ) => {
 			let testString = "TEST STRING";
 			let crdt = CRDT( testString );
-			let actionCount = 0;
+			
 			let sentCount =0;
 			crdt.onChange( ( e ) => {
-				actionCount++;
+				sentCount--;
+				if( sentCount == 0 ) {
+					assert.equal( 1 , 1 );
+					done();
+				}
 			});
 
 			for( let i = 0; i < 1000; i++ ) {
@@ -119,8 +123,7 @@ describe( 'events' , ( ) => {
 
 			}
 
-			assert.equal( actionCount , sentCount );
-			done();
+			
 	} );
 } );
  //
