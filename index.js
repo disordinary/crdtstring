@@ -1,15 +1,16 @@
 class CRDTString {
 	constructor( str ) {
-		this.start = new CRDTSpan( "" , - 1 );
-		this.end = new CRDTSpan( "" , -2 );
+		this.start = new CRDTSpan( "" , -1 , false , this );
+		this.end = new CRDTSpan( "" , -2 , false , this );
 
-		this.crdt = new CRDTSpan( str , 1 );
+		this.crdt = new CRDTSpan( str , 1 , false , this );
 
 		this.start.joinSpans( this.start , this.crdt );
 		this.end.joinSpans( this.crdt , this.end );
 
 		this.length = str.length;
 		this.events = [ ];
+		this.identifiers = { };
 	}
 
 	split( offset ) {
@@ -77,13 +78,46 @@ class CRDTString {
 			ids.push( item.id );
 			item = item.next
 		}
-		console.log( ids );
 		return ids;
+	}
+
+
+	//HAVE TO LICSTEN TO THE PIECE CHAIN SPLIT EVENT
+	updateIdentifier( id ) {
+		if( this.identifiers.hasOwnProperty( id ) ) {
+			this.getIdentifier( id , true );
+		}
+	}
+
+
+	getIdentifierAtOffset( offset , update ) {
+		return this.start.getIdentifierAtOffset( offset , update );
+	
+	}
+
+	getIdentifier( id , update ) {
+		return this.start.getIdentifier( id , update );
+	}
+
+	getSlice( start , end ) {
+		return new CRDTSlice( start , end );
+	}
+
+
+
+	onSplit( old , newLeft , newRight ) {
+		if( !old.isNew && old.length > 1 ) {
+			for( let i = 0; i < old.length; i++ ) {
+				this.updateIdentifier( old.id + i );
+			}
+		} else {
+			this.updateIdentifier( old.id );
+		}
 	}
 }
 
 class CRDTSpan {
-	constructor( str , id , isNew ) {
+	constructor( str , id , isNew , parent ) {
 		this.next;
 		this.prev;
 		this.str 	= str;
@@ -91,7 +125,8 @@ class CRDTSpan {
 		this.length = str.length;
 		this.isVisible = true;
 		this.isNew 	= isNew || false;
-
+		this.parent = parent;
+	
 	}
 
 	insert( offset , character ) {
@@ -111,8 +146,10 @@ class CRDTSpan {
 			id = right.id - .5;
 		}
 		
-		
-		let span = new CRDTSpan( character , id, true );
+		if( right.id < 0 ) { //if we're at the end then we actually do whole numbers and not fractions
+			id = left.id + left.length;
+		}
+		let span = new CRDTSpan( character , id, true , left.parent);
 
 		this.joinSpans( left , span );
 		this.joinSpans( span , right );
@@ -167,19 +204,24 @@ class CRDTSpan {
 		right.isNew = item.isNew;
 		left.isVisible = item.isVisible;
 		right.isVisible = item.isVisible;
+		left.parent = item.parent;
+		right.parent = item.parent;
 
 		if( left.length === 0 ) {
 			this.joinSpans( item.prev , right );
 			this.joinSpans( right , item.next );
+			this.parent.onSplit( item , left , right );
 			return { left : right.prev , right }
 		} else if (right.length === 0 ) {
 			this.joinSpans( item.prev , left );
 			this.joinSpans( left , item.next );
+			this.parent.onSplit( item , left , right );
 			return { left , right : left.next }
 		} else {
 			this.joinSpans( item.prev , left );
 			this.joinSpans( right , item.next );
 			this.joinSpans( left , right );		
+			this.parent.onSplit( item , left , right );
 			return { 
 				left , right
 			}
@@ -198,7 +240,7 @@ class CRDTSpan {
 				item = item.next;
 			}
 
-			let span = new CRDTSpan( character , ( ( right.id - left_offset_length ) / 2 ) + left_offset_length , true );
+			let span = new CRDTSpan( character , ( ( right.id - left_offset_length ) / 2 ) + left_offset_length , true , item.parent );
 
 			this.joinSpans( item , span );
 			return;
@@ -225,8 +267,130 @@ class CRDTSpan {
 		};
 	}
 
+
+	getIdentifierAtOffset( offset , update ) {
+		
+		if( this.parent.identifiers.hasOwnProperty( id ) && !update ) {
+			return this.parent.identifiers[ id ];
+		} else {
+
+
+			let total = this.length;
+			let item = this;
+			
+			while( offset > total && item.id !== -2 ) {	
+	 			item = item.next;
+				total += item.length;		
+			}
+			
+			let charOffset = item.length - (total - offset );
+			
+
+			if( item.id == -2  ) { //after end
+				item = item.prev;
+				charOffset = item.length;
+			} else if ( item.id == -1 ) { //before start
+				item = item.next;
+				charOffset = 0;
+			}
+			let id = item.id;
+
+			if( this.parent.identifiers.hasOwnProperty( id ) ) {
+				this.parent.identifiers[ id ].item = item;
+				this.parent.identifiers[ id ].offset = charOffset;
+			} else {
+				this.parent.identifiers[ id ] = new identifier( id , item , charOffset )
+			}
+		}
+
+		return this.parent.identifiers[ id ];
+	
+	}
+
+	getIdentifier( id , update ) {
+		
+		if( this.parent.identifiers.hasOwnProperty( id ) && !update ) {
+			return this.parent.identifiers[ id ];
+		} else {
+
+
+			
+			let item = this;
+			
+			while( item.next.id < id && item.next.id !== -2 ) {
+				item = item.next;
+			
+			}
+
+			
+			let charOffset = item.isNew ? 0 : id - item.id;
+			
+
+			if( this.parent.identifiers.hasOwnProperty( id ) ) {
+				this.parent.identifiers[ id ].item = item;
+				this.parent.identifiers[ id ].offset = charOffset;
+			} else {
+				this.parent.identifiers[ id ] = new identifier( id , item , charOffset )
+			}
+		}
+
+		return this.parent.identifiers[ id ];
+	
+	}
+
 }
 
+//an identifier is an object which identifies a piece of the CRDT,
+//it is guaranteed to be updated when an event happens so it is always in sync.
+class identifier {
+	constructor( key , item , offset_within_item ) {
+		this.key  = key
+		this.item = item;
+		this.offset = offset_within_item;
+	}
+}
+
+//a slice of a CRDT string, guaranteed to be consistant as the CRDT updates
+//todo allow offsets and identifiers
+class CRDTSlice {
+	constructor( start_identifier , end_identifier ) {
+		this.start = start_identifier;
+		this.end = end_identifier;
+	}
+
+	toString( show_hidden) {
+		let str = "";
+		let item = this.start.item;
+		while( item !== this.end.item.next ) {
+			if( item.isVisible || showHidden ) {
+				if( this.start.item == this.end.item == item ) {
+					console.log("STARTN AND END");
+					str += item.str.substr( this.start.offset , this.end.offset );
+
+				} else if( item = this.start.item ) {		
+					str += item.str.substr( this.start.offset );
+				} else if( item = this.end.item ) {
+					str += item.str.substr( 0 , this.end.offset );
+				} else {
+					str += item.str;	
+				}
+			
+			}
+			
+			item = item.next;
+		}
+		return str;
+	}
+
+	insertAt( offset , string ) {
+
+	}
+
+	//go from back to front and front to back until it finds the change set
+	insertDiff( new_string ) {
+
+	}
+}
 module.exports = function( str ) {
 	return new CRDTString( str );
 }

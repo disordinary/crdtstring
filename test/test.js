@@ -3,7 +3,7 @@ var CRDT = require("../index.js");
 
 
 
-
+/*
 describe( "CRDT insertion and deletion tests" , ( ) => {
 	
 		
@@ -79,6 +79,62 @@ describe( "CRDT insertion and deletion tests" , ( ) => {
 			done();
 		} );
 
+		it( 'should retain order even with very large strings' , ( done ) => {
+
+
+			let testString = "TEST STRING";
+			let crdt = CRDT( testString );
+
+			for( let i = 0; i < 30000; i++ ) { //this is approxomately a 6,000 word blog post
+				let insert = Math.floor( Math.random(  ) * 2 );
+				let character = Math.random().toString(36).substr(3 , 1);
+				let position = Math.floor( Math.random( ) * crdt.length );
+				let length = Math.floor( Math.random( ) * 10 );
+				
+					crdt.insert( position , character );
+					testString = stringSplice( testString , position , 0 , character );
+			}
+
+			assert.equal( crdt.toString( ) , testString );
+			done();
+		});
+
+		it( 'should be reasonably performant at random inserts' , ( done ) => {
+				return done();
+
+			let testString = "TEST STRING";
+			let crdt = CRDT( testString );
+			let start = Date.now();
+			
+			for( let i = 0; i < 30000; i++ ) { //this is approxomately a 6,000 word blog post
+				let insert = Math.floor( Math.random(  ) * 2 );
+				let character = Math.random().toString(36).substr(3 , 1);
+				let position = Math.floor( Math.random( ) * crdt.length );
+				let length = Math.floor( Math.random( ) * 10 );
+				
+				crdt.insert( position , character );
+			//	testString = stringSplice( testString , position , 0 , character );
+			}
+			let crdtTime = Date.now() - start;
+
+			start = Date.now();
+			
+			for( let i = 0; i < 30000; i++ ) { //this is approxomately a 6,000 word blog post
+				let insert = Math.floor( Math.random(  ) * 2 );
+				let character = Math.random().toString(36).substr(3 , 1);
+				let position = Math.floor( Math.random( ) * crdt.length );
+				let length = Math.floor( Math.random( ) * 10 );
+				
+			//	crdt.insert( position , character );
+				testString = stringSplice( testString , position , 0 , character );
+			}
+
+			let stringTime = Date.now( ) - start;
+			console.log( crdtTime , stringTime );
+
+			//assert.equal( crdt.toString( ) , testString );
+		});
+
 	});
 describe( 'synchronisation' , ( ) => {
 	it( 'two CRDT strings should remain in sync with replays ' , ( done ) => {
@@ -118,18 +174,49 @@ describe( 'events' , ( ) => {
 					sentCount++;
 					crdt.delete( position  , length  );
 					testString = stringSplice( testString , position , length );
-
 				}
-
 			}
-
-			
 	} );
 } );
- //
- //crdt.splitAtId( 7 );
- //
- //
+
+describe( 'if inserted at the end then whole numbers should be used as an identifier TODO - if from one user these should merge' , ( ) => { 
+	let testString = "TEST STRING";
+	let crdt = CRDT( testString );
+	crdt.insert( 3 , 'Y' );
+	crdt.insert( crdt.length , "X" );
+	crdt.insert( crdt.length , "X" );
+	crdt.insert( crdt.length , "X" );
+	it( 'adding items to the end of an array should make whole numbers ' , ( done ) => { 
+		assert.equal( crdt.toId( ).join( ) , '1,4.5,5,13,14,15' );
+		done();
+	});
+
+});
+ 
+describe( 'identifer tests' , ( ) => {
+	it( 'should return an identifier ' , ( done ) => {
+			let testString = "TEST STRING";
+			let crdt = CRDT( testString );
+			console.log( crdt );
+
+			console.log( "IDENTIFIER" , crdt.getIdentifier( 3 ) );
+		done();
+	} );
+} );
+*/
+		let testString = "TEST STRING";
+			let crdt = CRDT( testString );
+			
+			
+
+		//	console.log( "IDENTIFIER" , id );
+
+			//crdt.insert( 2 , "X" );
+		//	console.log( "IDENTIFIER2" , id );
+		
+		console.log( crdt.getSlice( crdt.getIdentifier( 2 ) , crdt.getIdentifier( 5 ) ).toString() );
+
+
  function stringSplice( str , start , delcount , newstr ) {
  	newstr = newstr || "";
  	return str.slice( 0 , start ) + newstr + str.slice( start + delcount );
