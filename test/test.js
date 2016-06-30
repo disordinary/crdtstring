@@ -204,17 +204,21 @@ describe( 'identifer tests' , ( ) => {
 	} );
 } );
 */
-		let testString = "TEST STRING";
+		let testString = "THE QUICK BROWN FOX JUMPED AFTER THE LAZY DOG";
 			let crdt = CRDT( testString );
 			
 			
 
-		//	console.log( "IDENTIFIER" , id );
-
-			//crdt.insert( 2 , "X" );
-		//	console.log( "IDENTIFIER2" , id );
 		
-		console.log( crdt.getSlice( crdt.getIdentifier( 2 ) , crdt.getIdentifier( 5 ) ).toString() );
+			let slice = crdt.getSlice( crdt.getIdentifier( 5 ) , crdt.getIdentifier( 16 ) );
+			console.log( slice.toString() );
+			crdt.insert( 11 , "1" );
+			crdt.insert( 12 , "2" );
+			crdt.insert( 13 , "3" );
+			console.log( slice.toString( ) );
+		
+		
+		
 
 
  function stringSplice( str , start , delcount , newstr ) {

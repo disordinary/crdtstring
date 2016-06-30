@@ -82,8 +82,8 @@ class CRDTString {
 	}
 
 
-	//HAVE TO LICSTEN TO THE PIECE CHAIN SPLIT EVENT
 	updateIdentifier( id ) {
+
 		if( this.identifiers.hasOwnProperty( id ) ) {
 			this.getIdentifier( id , true );
 		}
@@ -308,7 +308,7 @@ class CRDTSpan {
 	}
 
 	getIdentifier( id , update ) {
-		
+	
 		if( this.parent.identifiers.hasOwnProperty( id ) && !update ) {
 			return this.parent.identifiers[ id ];
 		} else {
@@ -317,7 +317,7 @@ class CRDTSpan {
 			
 			let item = this;
 			
-			while( item.next.id < id && item.next.id !== -2 ) {
+			while( item.next.id <= id && item.next.id !== -2 ) {
 				item = item.next;
 			
 			}
@@ -325,11 +325,13 @@ class CRDTSpan {
 			
 			let charOffset = item.isNew ? 0 : id - item.id;
 			
-
+			
 			if( this.parent.identifiers.hasOwnProperty( id ) ) {
+			
 				this.parent.identifiers[ id ].item = item;
 				this.parent.identifiers[ id ].offset = charOffset;
 			} else {
+				
 				this.parent.identifiers[ id ] = new identifier( id , item , charOffset )
 			}
 		}
@@ -358,24 +360,30 @@ class CRDTSlice {
 		this.end = end_identifier;
 	}
 
-	toString( show_hidden) {
+	toString( show_hidden ) {
+		
 		let str = "";
+		
 		let item = this.start.item;
-		while( item !== this.end.item.next ) {
+		while( item !== this.end.item.next) {
 			if( item.isVisible || showHidden ) {
-				if( this.start.item == this.end.item == item ) {
-					console.log("STARTN AND END");
-					str += item.str.substr( this.start.offset , this.end.offset );
+				if( this.start.item == this.end.item  ) {
+			
+					str += item.str.substring( this.start.offset , this.end.offset );
 
-				} else if( item = this.start.item ) {		
-					str += item.str.substr( this.start.offset );
-				} else if( item = this.end.item ) {
-					str += item.str.substr( 0 , this.end.offset );
+				} else if( item == this.start.item ) {
+				
+					str += item.str.substring( this.start.offset );
+				} else if( item == this.end.item ) {
+				
+					str += item.str.substring( 0 , this.end.offset + 1 );
 				} else {
+				
 					str += item.str;	
 				}
 			
 			}
+		
 			
 			item = item.next;
 		}
