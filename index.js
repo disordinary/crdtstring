@@ -390,8 +390,10 @@ class CRDTSlice {
 		return str;
 	}
 
-	insertAt( offset , string ) {
-
+	insert( offset , character , ignore_hidden ) {
+		ignore_hidden = ignore_hidden || true;
+		let item = this.start.item;
+		item.insert( offset , character , ignore_hidden )
 	}
 
 	//go from back to front and front to back until it finds the change set
